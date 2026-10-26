@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>켈베로스 키우기</title>
+  <style>
+    :root {
+      --text: #3b2f3a;
+      --muted: #8a7a88;
+      --pink: #f48fc0;
+      --pink-d: #d9609c;
+      --purple: #8b6fd6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: linear-gradient(#fdf2f8, #f3e8ff);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .game { width: 100%; max-width: 520px; }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    h1 { margin: 0; font-size: 1.3rem; }
+    .who { text-align: right; }
+    .name {
+      border: none;
+      border-bottom: 2px dashed transparent;
+      background: transparent;
+      font: inherit;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--pink-d);
+      width: 7em;
+      text-align: right;
+    }
+    .name:focus { outline: none; border-bottom-color: var(--pink); }
+    .stage-name { font-size: 0.85rem; color: var(--muted); }
+
+    /* 무대 */
+    .scene {
+      position: relative;
+      height: 300px;
+      border-radius: 20px;
+      overflow: hidden;
+      background: linear-gradient(#e0f2fe 0 62%, #d9f99d 62%);
+      box-shadow: 0 6px 20px rgba(150, 80, 140, 0.15);
+      transition: background 0.6s;
+    }
+    .scene.sleep { background: linear-gradient(#1e1b4b 0 62%, #3f3a5a 62%); }
+    .scene.bath { background: linear-gradient(#cffafe 0 62%, #67e8f9 62%); }
+    .scene.eat { background: linear-gradient(#fef3c7 0 62%, #fde68a 62%); }
+
+    .deco {
+      position: absolute;
+      left: 0;
+      top: 120px;
+      white-space: nowrap;
+      font-size: 2.2rem;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .scene.walk .deco { opacity: 1; animation: scroll 3s linear infinite; }
+    @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    .moon {
+      position: absolute;
+      right: 24px;
+      top: 18px;
+      font-size: 2rem;
+      opacity: 0;
+      transition: opacity 0.6s;
+    }
+    .scene.sleep .moon { opacity: 1; }
+
+    #pet {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 100%;
+      max-width: 400px;
+      transform: translateX(-50%);
+    }
+    #pet svg { display: block; width: 100%; height: auto; transform-origin: 50% 95%; }
+    .scene #pet svg { animation: bob 2.4s ease-in-out infinite; }
+    .scene.walk #pet svg { animation: hop 0.4s ease-in-out infinite; }
+    .scene.eat #pet svg { animation: nom 0.3s ease-in-out infinite; }
+    .scene.bath #pet svg { animation: shake 0.25s ease-in-out infinite; }
+    .scene.sleep #pet svg { animation: breathe 3s ease-in-out infinite; }
+    @keyframes bob { 50% { transform: translateY(-4px); } }
+    @keyframes hop { 50% { transform: translateY(-14px); } }
+    @keyframes nom { 50% { transform: scaleY(0.95); } }
+    @keyframes shake { 25% { transform: rotate(-2deg); } 75% { transform: rotate(2deg); } }
+    @keyframes breathe { 50% { transform: scale(1.02, 0.98); } }
+
+    .fx {
+      position: absolute;
+      font-size: 2rem;
+      pointer-events: none;
+      animation: float 1.5s ease-out forwards;
+    }
+    @keyframes float {
+      from { opacity: 1; transform: translateY(0) scale(0.8); }
+      to { opacity: 0; transform: translateY(-90px) scale(1.2); }
+    }
+
+    /* 상태 */
+    .panel {
+      margin-top: 14px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 14px rgba(150, 80, 140, 0.1);
+    }
+    .stat {
+      display: grid;
+      grid-template-columns: 6.5em 1fr 2.5em;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+    .bar { height: 12px; background: #f3f4f6; border-radius: 6px; overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: 6px; transition: width 0.4s, background 0.4s; }
+    .stat b { text-align: right; font-variant-numeric: tabular-nums; }
+    .stat.low { color: #dc2626; }
+
+    .exp { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #eadfe8; }
+    .exp-top { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 6px; }
+    .exp .bar { height: 14px; }
+    .exp .bar i { background: linear-gradient(90deg, var(--pink), var(--purple)); }
+    .hint { margin-top: 6px; font-size: 0.8rem; color: var(--muted); }
+    .hint.ready { color: var(--purple); font-weight: 600; }
+
+    /* 행동 버튼 */
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .actions button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 4px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(150, 80, 140, 0.12);
+      transition: transform 0.1s, background 0.2s;
+    }
+    .actions button span { display: block; font-size: 1.6rem; margin-bottom: 2px; }
+    .actions button:hover:not(:disabled) { background: #fce7f3; transform: translateY(-2px); }
+    .actions button:disabled { opacity: 0.5; cursor: default; }
+
+    .msg {
+      margin-top: 12px;
+      min-height: 1.5em;
+      text-align: center;
+      font-size: 0.95rem;
+    }
+    footer { margin-top: 16px; text-align: center; }
+    .reset {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* 진화 연출 */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(59, 47, 58, 0.55);
+      z-index: 10;
+    }
+    .overlay.show { display: flex; animation: flash 0.6s ease-out; }
+    @keyframes flash { from { background: rgba(255, 255, 255, 1); } }
+    .overlay .box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 24px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+    }
+    .overlay h2 { margin: 0 0 8px; color: var(--pink-d); }
+    .overlay p { margin: 0 0 16px; line-height: 1.5; }
+    .overlay .preview svg { width: 100%; height: auto; }
+    .overlay button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 20px;
+      margin: 0 4px;
+      background: var(--pink-d);
+      color: #fff;
+      font: inherit;
+      cursor: pointer;
+    }
+    .overlay button.sub { background: #f3f4f6; color: var(--text); }
+
+    @media (max-width: 420px) {
+      .actions { grid-template-columns: repeat(2, 1fr); }
+      .scene { height: 240px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="game">
+    <header>
+      <h1>🐾 켈베로스 키우기</h1>
+      <div class="who">
+        <input class="name" id="name" maxlength="10" aria-label="이름">
+        <div class="stage-name" id="stage-name"></div>
+      </div>
+    </header>
+
+    <div class="scene" id="scene">
+      <div class="deco">🌳&emsp;🌷&emsp;&emsp;🌲&emsp;🌼&emsp;🌳&emsp;&emsp;🌷&emsp;🌲&emsp;🌳&emsp;🌷&emsp;&emsp;🌲&emsp;🌼&emsp;🌳&emsp;&emsp;🌷&emsp;🌲&emsp;</div>
+      <div class="moon">🌙</div>
+      <div id="pet"></div>
+    </div>
+
+    <div class="panel">
+      <div id="stats"></div>
+      <div class="exp">
+        <div class="exp-top"><span>✨ 진화 게이지</span><span id="exp-text"></span></div>
+        <div class="bar"><i id="exp-bar"></i></div>
+        <div class="hint" id="hint"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button data-act="feed"><span>🍖</span>밥주기</button>
+      <button data-act="walk"><span>🌳</span>산책하기</button>
+      <button data-act="bath"><span>🛁</span>목욕하기</button>
+      <button data-act="sleep"><span>💤</span>잠자기</button>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <footer><button class="reset" id="reset">처음부터 다시 키우기</button></footer>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="box">
+      <h2 id="ov-title"></h2>
+      <div class="preview" id="ov-pet"></div>
+      <p id="ov-text"></p>
+      <div id="ov-buttons"></div>
+    </div>
+  </div>
+
+  <script>
+    const SAVE_KEY = "cerberus-save-v1";
+    const TICK_MS = 2000;
+
+    // 단계별 정보: next = 다음 진화에 필요한 누적 경험치
+    const STAGES = [
+      null,
+      { name: "아기 멍뭉이", next: 100 },
+      { name: "쌍두견 오르토스", next: 300 },
+      { name: "켈베로스", next: null },
+    ];
+    const EVOLVE_MIN = 50; // 진화하려면 모든 상태가 이 값 이상
+
+    const STATS = [
+      { key: "hunger", label: "🍖 포만감", color: "#f59e0b" },
+      { key: "energy", label: "⚡ 체력", color: "#22c55e" },
+      { key: "clean", label: "🫧 청결", color: "#38bdf8" },
+      { key: "happy", label: "💖 행복", color: "#f472b6" },
+    ];
+
+    const ACTIONS = {
+      feed: {
+        time: 1200, fx: ["🍖", "🦴", "😋"],
+        check: () => s.hunger >= 95 ? "배가 불러서 더 못 먹어요!" : null,
+        effect: { hunger: 30, energy: 5, clean: -5, happy: 5 }, exp: 6,
+        msg: "냠냠! 맛있게 먹었어요.",
+      },
+      walk: {
+        time: 2500, fx: ["🐾", "🌼", "🦋"],
+        check: () =>
+          s.energy < 25 ? "너무 지쳐서 산책을 못 가요... 재워 주세요." :
+          s.hunger < 15 ? "배가 고파서 걸을 힘이 없어요." : null,
+        effect: { energy: -25, hunger: -15, clean: -20, happy: 20 }, exp: 15,
+        msg: "산책 최고! 그런데 조금 지저분해졌어요.",
+      },
+      bath: {
+        time: 2000, fx: ["🫧", "🧼", "💦"],
+        check: () =>
+          s.clean >= 95 ? "이미 뽀송뽀송해요!" :
+          s.energy < 10 ? "목욕할 힘도 없어요..." : null,
+        effect: { clean: 50, energy: -10, happy: 5 }, exp: 8,
+        msg: "뽀득뽀득 깨끗해졌어요!",
+      },
+      sleep: {
+        time: 3000, fx: ["💤", "⭐"],
+        check: () => s.energy >= 95 ? "아직 하나도 안 졸려요!" : null,
+        effect: { energy: 50, hunger: -10, happy: 5 }, exp: 5,
+        msg: "푹 자고 일어났어요. 체력 회복!",
+      },
+    };
+
+    const $ = id => document.getElementById(id);
+    const scene = $("scene");
+    const petBox = $("pet");
+
+    let s = load();
+    let busy = null;       // 진행 중인 행동 이름
+    let happyUntil = 0;    // 행동 직후 잠깐 웃는 얼굴
+    let lastPetKey = "";
+
+    function defaultState() {
+      return { name: "멍뭉이", stage: 1, exp: 0, hunger: 70, energy: 80, clean: 80, happy: 70, ended: false };
+    }
+
+    function load() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
+        if (saved && saved.stage) return { ...defaultState(), ...saved };
+      } catch {}
+      return defaultState();
+    }
+
+    function save() {
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch {}
+    }
+
+    const clamp = v => Math.max(0, Math.min(100, v));
+
+    function change(delta) {
+      for (const k in delta) s[k] = clamp(s[k] + delta[k]);
+    }
+
+    // ---------- 캐릭터 그리기 ----------
+    function head(x, y, scale, mood, ribbon) {
+      const ink = "#3b2f3a";
+      let eyes;
+      if (mood === "sleep") {
+        eyes = `<path d="M-38 20 q13 8 26 0 M12 20 q13 8 26 0" stroke="${ink}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+      } else if (mood === "happy") {
+        eyes = `<path d="M-38 24 q13 -16 26 0 M12 24 q13 -16 26 0" stroke="${ink}" stroke-width="4.5" fill="none" stroke-linecap="round"/>`;
+      } else {
+        eyes = [-25, 25].map(cx => `
+          <ellipse cx="${cx}" cy="20" rx="13" ry="15" fill="#fff" stroke="${ink}" stroke-width="3.5"/>
+          <ellipse cx="${cx}" cy="22" rx="10" ry="12" fill="#9b7fe0"/>
+          <ellipse cx="${cx}" cy="27" rx="7" ry="6" fill="#c4b2f5"/>
+          <circle cx="${cx + 4}" cy="15" r="4" fill="#fff"/>`).join("");
+      }
+      const brows = mood === "sad"
+        ? `<path d="M-38 4 L-14 -4 M14 -4 L38 4" stroke="${ink}" stroke-width="5" stroke-linecap="round"/>`
+        : `<path d="M-37 1 q11 -7 22 0 M15 1 q11 -7 22 0" stroke="${ink}" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+      const mouth = mood === "sad"
+        ? `<path d="M-8 44 q8 -7 16 0" stroke="${ink}" stroke-width="3" fill="none" stroke-linecap="round"/>`
+        : mood === "sleep"
+          ? `<circle cx="0" cy="40" r="3.5" fill="${ink}"/>`
+          : `<path d="M-10 38 q5 7 10 0 q5 7 10 0" stroke="${ink}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+
+      const hair = "#f48fc0", hairD = "#de6ea8";
+      const sideLock = `<path d="M-60 -22 C-78 0 -84 40 -92 64 C-76 54 -68 42 -61 30 C-57 10 -56 -6 -60 -22 Z" fill="${hair}" stroke="${hairD}" stroke-width="2" stroke-linejoin="round"/>`;
+
+      return `
+      <g transform="translate(${x} ${y}) scale(${scale})">
+        <circle cx="52" cy="-80" r="26" fill="${hair}" stroke="${hairD}" stroke-width="2"/>
+        <path d="M38 -84 q14 -14 28 0 q-12 12 -22 2" stroke="${hairD}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <ellipse cx="0" cy="15" rx="72" ry="52" fill="#fff" stroke="#e8e2e7" stroke-width="2"/>
+        <ellipse cx="-47" cy="36" rx="12" ry="7" fill="#ffb3cf" opacity="0.75"/>
+        <ellipse cx="47" cy="36" rx="12" ry="7" fill="#ffb3cf" opacity="0.75"/>
+        ${eyes}${brows}${mouth}
+        ${sideLock}
+        <g transform="scale(-1 1)">${sideLock}</g>
+        <path d="M-80 15 C-88 -55 -40 -86 0 -84 C45 -86 88 -55 80 15
+                 L70 0 L62 -18 L52 -2 L40 -24 L26 -4 L12 -26 L0 -6
+                 L-14 -26 L-26 -4 L-40 -24 L-52 -2 L-62 -18 L-70 0 Z"
+              fill="${hair}" stroke="${hairD}" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M-30 -60 q20 -14 44 -10" stroke="#fbc4de" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <g transform="translate(70 -54)">
+          <path d="M0 0 l-4 16 M0 0 l6 15" stroke="${ribbon}" stroke-width="4" stroke-linecap="round"/>
+          <path d="M0 0 L-13 -8 L-13 8 Z M0 0 L13 -8 L13 8 Z" fill="${ribbon}" stroke-linejoin="round"/>
+          <circle r="3.5" fill="${ribbon}"/>
+        </g>
+      </g>`;
+    }
+
+    // 단계별 몸통/다리/머리 배치
+    const LAYOUT = {
+      1: { body: [120, 150, 190], legs: [[250, 285], [135, 180]], tail: [312, 168],
+           heads: [[190, 135, 1, "#8b6fd6"]] },
+      2: { body: [85, 150, 250], legs: [[255, 295], [100, 150]], tail: [337, 168],
+           heads: [[265, 140, 0.82, "#5b8def"], [145, 140, 0.82, "#8b6fd6"]] },
+      3: { body: [55, 152, 300], legs: [[285, 325], [70, 120]], tail: [357, 170],
+           heads: [[302, 162, 0.68, "#e0a526"], [98, 162, 0.68, "#5b8def"], [200, 122, 0.76, "#8b6fd6"]] },
+    };
+
+    function petSVG(stage, mood, dirty) {
+      const L = LAYOUT[stage];
+      const [bx, by, bw] = L.body;
+      const leg = (x, fill) => `<rect x="${x}" y="225" width="32" height="54" rx="16" fill="${fill}" stroke="#e5e0e4" stroke-width="2.5"/>`;
+      const spots = dirty
+        ? [[bx + bw * 0.55, by + 55, 12], [bx + bw * 0.8, by + 35, 9], [bx + bw * 0.3, by + 75, 8], [bx + bw * 0.7, by + 80, 7]]
+            .map(([x, y, r]) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.7}" fill="#a07850" opacity="0.55"/>`).join("")
+        : "";
+      const [tx, ty] = L.tail;
+      return `
+      <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${STAGES[stage].name}">
+        <ellipse cx="200" cy="284" rx="${bw / 2 + 30}" ry="10" fill="#000" opacity="0.08"/>
+        ${L.legs[0].map(x => leg(x, "#f4f1f3")).join("")}
+        <ellipse cx="${tx}" cy="${ty}" rx="22" ry="12" transform="rotate(-35 ${tx} ${ty})" fill="#fff" stroke="#e5e0e4" stroke-width="2.5"/>
+        <rect x="${bx}" y="${by}" width="${bw}" height="100" rx="50" fill="#fff" stroke="#e5e0e4" stroke-width="2.5"/>
+        ${spots}
+        ${L.legs[1].map(x => leg(x, "#fff")).join("")}
+        ${L.heads.map(([x, y, sc, rib]) => head(x, y, sc, mood, rib)).join("")}
+      </svg>`;
+    }
+
+    function currentMood() {
+      if (busy === "sleep") return "sleep";
+      if (Date.now() < happyUntil || busy) return "happy";
+      if (STATS.some(st => s[st.key] < 25)) return "sad";
+      return "normal";
+    }
+
+    // ---------- 화면 갱신 ----------
+    function buildStats() {
+      $("stats").innerHTML = STATS.map(st => `
+        <div class="stat" id="st-${st.key}">
+          <span>${st.label}</span>
+          <div class="bar"><i></i></div>
+          <b></b>
+        </div>`).join("");
+    }
+
+    function render() {
+      $("stage-name").textContent = `${s.stage}단계 · ${STAGES[s.stage].name}`;
+      if (document.activeElement !== $("name")) $("name").value = s.name;
+
+      for (const st of STATS) {
+        const v = Math.round(s[st.key]);
+        const row = $("st-" + st.key);
+        row.classList.toggle("low", v < 25);
+        row.querySelector("i").style.width = v + "%";
+        row.querySelector("i").style.background = v < 25 ? "#ef4444" : st.color;
+        row.querySelector("b").textContent = v;
+      }
+
+      const stage = STAGES[s.stage];
+      const hint = $("hint");
+      if (stage.next) {
+        const prev = s.stage === 1 ? 0 : STAGES[s.stage - 1].next;
+        const pct = Math.min(100, ((s.exp - prev) / (stage.next - prev)) * 100);
+        $("exp-bar").style.width = pct + "%";
+        $("exp-text").textContent = `${Math.floor(s.exp)} / ${stage.next}`;
+        if (s.exp >= stage.next) {
+          hint.className = "hint ready";
+          hint.textContent = `진화 준비 완료! 모든 상태를 ${EVOLVE_MIN} 이상으로 만들어 주세요.`;
+        } else {
+          hint.className = "hint";
+          hint.textContent = `다음 진화: ${STAGES[s.stage + 1].name} (머리 ${s.stage + 1}개) · 행복할수록 경험치를 더 많이 얻어요.`;
+        }
+      } else {
+        $("exp-bar").style.width = "100%";
+        $("exp-text").textContent = "MAX";
+        hint.className = "hint ready";
+        hint.textContent = "최종 진화 완료! 머리 셋 달린 켈베로스가 되었어요.";
+      }
+
+      const mood = currentMood();
+      const dirty = s.clean < 40;
+      const key = `${s.stage}|${mood}|${dirty}`;
+      if (key !== lastPetKey) {
+        petBox.innerHTML = petSVG(s.stage, mood, dirty);
+        lastPetKey = key;
+      }
+
+      document.querySelectorAll(".actions button").forEach(b => (b.disabled = !!busy));
+    }
+
+    function say(text) { $("msg").textContent = text; }
+
+    function spawnFx(emoji) {
+      const el = document.createElement("div");
+      el.className = "fx";
+      el.textContent = emoji;
+      el.style.left = 15 + Math.random() * 65 + "%";
+      el.style.top = 20 + Math.random() * 40 + "%";
+      scene.appendChild(el);
+      setTimeout(() => el.remove(), 1500);
+    }
+
+    // ---------- 행동 ----------
+    function doAction(name) {
+      if (busy) return;
+      const act = ACTIONS[name];
+      const reason = act.check();
+      if (reason) { say("😣 " + reason); return; }
+
+      busy = name;
+      scene.className = "scene " + name;
+      say({ feed: "밥 먹는 중...", walk: "산책 중...", bath: "목욕 중...", sleep: "쿨쿨 자는 중..." }[name]);
+      render();
+
+      const fxTimer = setInterval(() => spawnFx(act.fx[Math.floor(Math.random() * act.fx.length)]), 350);
+
+      setTimeout(() => {
+        clearInterval(fxTimer);
+        change(act.effect);
+        // 행복도가 높으면 경험치 1.5배, 낮으면 절반
+        const mult = s.happy >= 70 ? 1.5 : s.happy < 30 ? 0.5 : 1;
+        const gained = Math.round(act.exp * mult);
+        s.exp += gained;
+        busy = null;
+        happyUntil = Date.now() + 2000;
+        scene.className = "scene";
+        say(`${act.msg} (경험치 +${gained})`);
+        save();
+        render();
+        tryEvolve();
+        setTimeout(render, 2100);
+      }, act.time);
+    }
+
+    function tryEvolve() {
+      const stage = STAGES[s.stage];
+      if (!stage.next || s.exp < stage.next) return;
+      if (STATS.some(st => s[st.key] < EVOLVE_MIN)) return;
+
+      s.stage++;
+      save();
+      lastPetKey = "";
+      render();
+
+      if (s.stage === 3) {
+        s.ended = true;
+        save();
+        showOverlay(
+          "🔥 켈베로스 탄생! 🔥",
+          `${s.name}이(가) 머리 셋 달린 전설의 켈베로스로 진화했어요!<br>끝까지 키워 줘서 고마워요.`,
+          [["계속 놀기", closeOverlay], ["처음부터", resetGame, "sub"]]
+        );
+      } else {
+        showOverlay(
+          "✨ 진화했어요! ✨",
+          `${s.name}이(가) <b>${STAGES[s.stage].name}</b>(으)로 진화했어요!<br>머리가 ${s.stage}개가 되었어요.`,
+          [["좋아요!", closeOverlay]]
+        );
+      }
+    }
+
+    function showOverlay(title, text, buttons) {
+      $("ov-title").textContent = title;
+      $("ov-text").innerHTML = text;
+      $("ov-pet").innerHTML = petSVG(s.stage, "happy", false);
+      const box = $("ov-buttons");
+      box.innerHTML = "";
+      for (const [label, fn, cls] of buttons) {
+        const b = document.createElement("button");
+        b.textContent = label;
+        if (cls) b.className = cls;
+        b.addEventListener("click", fn);
+        box.appendChild(b);
+      }
+      $("overlay").classList.add("show");
+    }
+
+    function closeOverlay() { $("overlay").classList.remove("show"); }
+
+    function resetGame() {
+      closeOverlay();
+      s = defaultState();
+      save();
+      lastPetKey = "";
+      say("새로운 멍뭉이가 찾아왔어요! 잘 키워 주세요.");
+      render();
+    }
+
+    // ---------- 시간 경과 ----------
+    function tick() {
+      if (busy === "sleep") return;
+      change({
+        hunger: -1,
+        energy: -0.4,
+        clean: -0.6,
+        happy: -0.5 - (s.hunger < 20 ? 0.7 : 0) - (s.clean < 20 ? 0.7 : 0),
+      });
+      save();
+      render();
+    }
+
+    // ---------- 이벤트 ----------
+    document.querySelectorAll(".actions button").forEach(b =>
+      b.addEventListener("click", () => doAction(b.dataset.act))
+    );
+    $("name").addEventListener("input", e => {
+      s.name = e.target.value.trim() || "멍뭉이";
+      save();
+    });
+    $("name").addEventListener("blur", render);
+    $("reset").addEventListener("click", () => {
+      if (confirm("정말 처음부터 다시 키울까요? 지금까지의 진행이 사라져요.")) resetGame();
+    });
+
+    buildStats();
+    render();
+    say(`${s.name}이(가) 반겨 줘요! 밥주기, 산책, 목욕, 잠으로 돌봐 주세요.`);
+    setInterval(tick, TICK_MS);
+  </script>
+</body>
+</html>

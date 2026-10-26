@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do 리스트</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f3f4f6;
+      color: #1f2937;
+      display: flex;
+      justify-content: center;
+      padding: 48px 16px;
+    }
+    .container {
+      width: 100%;
+      max-width: 480px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      padding: 24px;
+      height: fit-content;
+    }
+    h1 { margin: 0 0 16px; font-size: 1.5rem; }
+    form { display: flex; gap: 8px; }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    input[type="text"]:focus { outline: 2px solid #6366f1; border-color: transparent; }
+    button {
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .add-btn { background: #6366f1; color: #fff; padding: 10px 16px; }
+    .add-btn:hover { background: #4f46e5; }
+    .filters { display: flex; gap: 6px; margin: 16px 0 8px; }
+    .filters button { background: #f3f4f6; padding: 6px 12px; }
+    .filters button.active { background: #6366f1; color: #fff; }
+    ul { list-style: none; margin: 0; padding: 0; }
+    li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 4px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    li input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    li span { flex: 1; word-break: break-word; }
+    li.done span { text-decoration: line-through; color: #9ca3af; }
+    .del-btn { background: transparent; color: #ef4444; font-size: 1.1rem; padding: 4px 8px; }
+    .del-btn:hover { background: #fee2e2; }
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+    .clear-btn { background: transparent; color: #6b7280; padding: 4px 8px; }
+    .clear-btn:hover { color: #ef4444; }
+    .empty { text-align: center; color: #9ca3af; padding: 24px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📝 To-Do 리스트</h1>
+    <form id="todo-form">
+      <input type="text" id="todo-input" placeholder="할 일을 입력하세요" autocomplete="off" required>
+      <button type="submit" class="add-btn">추가</button>
+    </form>
+
+    <div class="filters">
+      <button data-filter="all" class="active">전체</button>
+      <button data-filter="active">진행 중</button>
+      <button data-filter="done">완료</button>
+    </div>
+
+    <ul id="todo-list"></ul>
+
+    <div class="footer">
+      <span id="count"></span>
+      <button class="clear-btn" id="clear-done">완료 항목 삭제</button>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "todos";
+    const form = document.getElementById("todo-form");
+    const input = document.getElementById("todo-input");
+    const list = document.getElementById("todo-list");
+    const count = document.getElementById("count");
+    const filterButtons = document.querySelectorAll(".filters button");
+
+    let todos = load();
+    let filter = "all";
+
+    function load() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+      } catch {}
+    }
+
+    function render() {
+      list.innerHTML = "";
+      const visible = todos.filter(t =>
+        filter === "all" ? true : filter === "done" ? t.done : !t.done
+      );
+
+      if (visible.length === 0) {
+        const li = document.createElement("li");
+        li.className = "empty";
+        li.textContent = "할 일이 없습니다.";
+        list.appendChild(li);
+      }
+
+      visible.forEach(todo => {
+        const li = document.createElement("li");
+        if (todo.done) li.classList.add("done");
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = todo.done;
+        checkbox.addEventListener("change", () => {
+          todo.done = checkbox.checked;
+          save();
+          render();
+        });
+
+        const span = document.createElement("span");
+        span.textContent = todo.text;
+
+        const del = document.createElement("button");
+        del.className = "del-btn";
+        del.textContent = "✕";
+        del.title = "삭제";
+        del.addEventListener("click", () => {
+          todos = todos.filter(t => t.id !== todo.id);
+          save();
+          render();
+        });
+
+        li.append(checkbox, span, del);
+        list.appendChild(li);
+      });
+
+      const remaining = todos.filter(t => !t.done).length;
+      count.textContent = `남은 할 일: ${remaining}개`;
+    }
+
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      todos.push({ id: Date.now(), text, done: false });
+      input.value = "";
+      save();
+      render();
+    });
+
+    filterButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        filterButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        filter = btn.dataset.filter;
+        render();
+      });
+    });
+
+    document.getElementById("clear-done").addEventListener("click", () => {
+      todos = todos.filter(t => !t.done);
+      save();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
