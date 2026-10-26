@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>제주 여인의 일생</title>
+<style>
+  :root { --ink:#1f2f3a; --gold:#f2b84b; --red:#c8453b; --card:#fffdf7; }
+  * { box-sizing:border-box; margin:0; }
+  body { min-height:100vh; font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif; color:var(--ink);
+    background:linear-gradient(#e9f6fb,#cfe9f3); display:flex; justify-content:center; padding:14px; }
+  .app { width:min(460px,100%); display:flex; flex-direction:column; gap:10px; }
+  h1 { text-align:center; font-size:1.35rem; margin-top:4px; }
+  .sub { text-align:center; font-size:.85rem; opacity:.7; margin-top:-6px; }
+  .top { display:flex; justify-content:space-between; align-items:center; }
+  .auto { border:2px solid #2a7fa6; background:#fff; color:#2a7fa6; border-radius:999px; padding:4px 12px; font-size:.82rem; font-weight:700; }
+  .auto.on { background:#2a7fa6; color:#fff; }
+  .era { font-size:.8rem; opacity:.7; }
+
+  .scene { position:relative; height:190px; border-radius:18px; overflow:hidden; transition:filter .6s;
+    background:linear-gradient(#cfeaf5 0%,#e9f6fb 45%,#3b93b8 45%,#1f6c92 100%); box-shadow:0 4px 12px #0003; }
+  .scene.away { filter:hue-rotate(35deg) saturate(.8); }
+  .wave { position:absolute; left:-10%; width:120%; height:14px; border-radius:50%; background:#ffffff55; animation:sway 4s ease-in-out infinite; }
+  .w1{top:96px} .w2{top:122px;animation-delay:-1.5s} .w3{top:150px;animation-delay:-3s}
+  @keyframes sway { 50% { transform:translateX(18px); } }
+  #person { position:absolute; left:50%; bottom:58px; transform-origin:50% 100%; transition:transform .4s; }
+  .agebox { position:absolute; top:8px; left:12px; font-weight:800; font-size:1.7rem; text-shadow:0 1px 0 #fff; }
+  .agebox small { font-size:.9rem; }
+  .place { position:absolute; top:12px; right:12px; font-size:.78rem; background:#fffa; padding:2px 8px; border-radius:999px; }
+
+  .life { height:8px; background:#fff9; border-radius:999px; overflow:hidden; }
+  .life i { display:block; height:100%; width:0; background:var(--gold); transition:width .3s; }
+
+  .stats { display:flex; gap:8px; }
+  .stat { flex:1; background:#fff9; border-radius:12px; padding:6px 8px; font-size:.8rem; }
+  .stat b { display:block; margin-bottom:3px; }
+  .bar { height:7px; border-radius:99px; background:#0001; overflow:hidden; }
+  .bar i { display:block; height:100%; width:0; transition:width .4s; }
+  .s-b i { background:#2a7fa6; } .s-s i { background:#9b59b6; } .s-g i { background:#e08a2b; }
+
+  .card { background:var(--card); border-radius:18px; padding:14px 16px; box-shadow:0 4px 12px #0002; min-height:250px; display:flex; flex-direction:column; gap:8px; }
+  .card.pop { animation:pop .35s ease-out; }
+  .card.enc { border:3px solid #9b59b6; }
+  @keyframes pop { from { transform:translateY(10px); opacity:0; } }
+  .card h2 { font-size:1.1rem; }
+  .card p { font-size:.95rem; line-height:1.5; }
+  .tag { align-self:flex-start; font-size:.75rem; font-weight:700; padding:2px 9px; border-radius:999px; background:#9b59b6; color:#fff; }
+  .tag.path { background:#2a7fa6; }
+  .jeju { background:#fff3d6; border-left:4px solid var(--gold); padding:6px 10px; border-radius:6px; font-size:.9rem; }
+  .jeju b { color:#b5651d; }
+  .choices { display:flex; flex-direction:column; gap:7px; margin-top:auto; }
+  button { font:inherit; cursor:pointer; }
+  .choice { border:2px solid #2a7fa6; background:#fff; color:var(--ink); border-radius:12px; padding:9px 12px; text-align:left; font-size:.95rem; transition:.15s; }
+  .choice:hover { background:#e8f5fb; transform:translateY(-1px); }
+  .card.enc .choice { border-color:#9b59b6; } .card.enc .choice:hover { background:#f4eaf8; }
+  .big { border:0; background:var(--red); color:#fff; padding:12px; border-radius:12px; font-size:1.05rem; font-weight:700; }
+  .next { border:0; background:#2a7fa6; color:#fff; padding:10px; border-radius:12px; font-weight:700; }
+
+  .log { font-size:.82rem; padding-left:18px; opacity:.85; max-height:120px; overflow:auto; }
+  .log li { margin:2px 0; }
+  .dex { display:flex; flex-wrap:wrap; gap:5px; font-size:.75rem; }
+  .dex span { padding:2px 8px; border-radius:999px; background:#0001; opacity:.5; }
+  .dex span.on { background:var(--gold); opacity:1; font-weight:700; }
+  .note { font-size:.72rem; opacity:.55; text-align:center; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🌊 제주 여인의 일생</h1>
+  <p class="sub">조선 후기 · 바다와 신 사이에서 자라나는 삶</p>
+  <div class="top"><span class="era" id="era">—</span><button class="auto" id="autoBtn">🤖 자동 진행 OFF</button></div>
+
+  <div class="scene" id="scene">
+    <div class="wave w1"></div><div class="wave w2"></div><div class="wave w3"></div>
+    <div class="agebox"><span id="age">0</span><small>세</small></div>
+    <div class="place" id="place">—</div>
+    <svg id="person" width="70" height="100" viewBox="0 0 70 100"></svg>
+  </div>
+  <div class="life"><i id="lifebar"></i></div>
+
+  <div class="stats">
+    <div class="stat s-b"><b>🫧 숨 <span id="vb">0</span></b><div class="bar"><i id="bb"></i></div></div>
+    <div class="stat s-s"><b>🔮 신기 <span id="vs">0</span></b><div class="bar"><i id="bs"></i></div></div>
+    <div class="stat s-g"><b>🏘 정(괸당) <span id="vg">0</span></b><div class="bar"><i id="bg"></i></div></div>
+  </div>
+
+  <div class="card" id="card"></div>
+  <p class="note">제주 해녀 문화·신화를 바탕으로 한 창작 게임이에요. 역사와 제주어 표현은 단순화·창작이 섞여 있어요.</p>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const MAX = 10;
+const VILLAGES = ["김녕","하도","성산","한림","우도","모슬포","법환","종달"];
+const rnd = p => Math.random() < p;
+const pickOne = a => a[Math.floor(Math.random()*a.length)];
+
+/* ---------- 시기별 선택지 ---------- */
+// d = [숨, 신기, 정], j = [제주어/용어, 뜻]
+const COMMON = [
+  { age:7, title:"일곱 살, 바당 가의 아이", text:"갯바위에서 놀던 아이에게 세 가지 풍경이 보인다.", choices:[
+    { t:"물속을 들여다보며 숨 참기 놀이", d:[2,0,1], j:["숨비소리","물에서 올라와 내쉬는 해녀의 휘파람 같은 숨소리"] },
+    { t:"할머니 곁에서 굿 구경", d:[0,2,1], j:["심방","제주의 무당, 신과 사람을 잇는 사람"] },
+    { t:"이웃 아이들과 보말 줍기", d:[1,0,2], j:["보말","고둥. 바닷가 아이들의 간식"] } ] },
+  { age:15, title:"열다섯 살, 처음 물에 들다", text:"불턱에 둘러앉은 언니들이 묻는다. 오늘은 어디까지 가볼래?", choices:[
+    { t:"얕은 물에서 천천히, 테왁을 꼭 잡고", d:[2,0,1], j:["테왁","물에 띄워 몸을 의지하는 박 또는 부표"] },
+    { t:"깊은 곳까지 용기 내어 한 번에", d:[3,0,0], j:["물숨","숨 한계를 넘겨 마시는 위험한 숨. 욕심을 경계하라는 말"] },
+    { t:"언니들 불턱 이야기를 귀담아듣기", d:[0,1,2], j:["불턱","해녀들이 옷을 갈아입고 불을 쬐며 쉬는 돌담터"] },
+    { t:"꿈에 본 할망 얼굴이 자꾸 떠오른다", d:[0,3,0], j:["신병","신이 내리려 할 때 앓는 병이라 여기던 것"], need:["s",2] } ] },
+  { age:25, title:"스물다섯 살, 갈림길", text:"이 선택이 앞으로의 삶을 가른다. 어느 길을 걸을까?", choices:[
+    { t:"🌊 바다로 — 물질에 모든 것을 건다", d:[3,0,0], path:"sea", j:["상군","물질 솜씨가 가장 뛰어난 해녀"] },
+    { t:"🔮 신의 길 — 내림굿을 받아들인다", d:[0,3,0], path:"shaman", j:["내림굿","신을 몸에 모시는 의례"] },
+    { t:"🏘 마을 살림 — 이웃과 얽혀 산다", d:[0,0,3], path:"village", j:["수눌음","서로 일손을 돌려 돕는 품앗이"] } ] }
+];
+
+const PATH_STAGES = {
+  sea: [
+    { age:40, title:"마흔 살, 물질의 절정", text:"이제 바다는 내 손바닥 같다. 물속의 큰 전복밭이 눈에 들어온다.", choices:[
+      { t:"상군 자리를 두고 가장 깊은 곳에 도전", d:[3,0,0], j:["상군","물질 솜씨가 가장 뛰어난 해녀"] },
+      { t:"후배 잠녀들을 이끌어 함께 작업", d:[1,0,2], j:["하군","물질이 아직 서툰 초보 해녀"] },
+      { t:"요왕맞이 굿으로 바다에 감사 올리기", d:[1,2,0], j:["요왕맞이","바다의 용왕(요왕)께 올리는 해녀들의 굿"] } ] },
+    { age:55, title:"쉰다섯 살, 숨이 달라지는 나이", text:"숨이 예전 같지 않다. 바다는 여전한데 몸이 먼저 안다.", choices:[
+      { t:"욕심을 줄이고 물때를 읽으며 오래 가기", d:[2,0,1], j:["물때","바닷물이 들고 나는 때. 물질의 기준"] },
+      { t:"잠녀들끼리 불턱의 규칙을 세운다", d:[0,0,3], j:["불턱","해녀들이 쉬고 의논하는 돌담터"] },
+      { t:"바다의 신께 마지막 큰 소원을 올린다", d:[0,2,1], j:["요왕","바다를 다스리는 용왕의 제주어"] } ] },
+    { age:70, title:"일흔 살, 마지막 물질", text:"노을이 바다를 물들인다. 물가에 선 늙은 해녀는 무엇을 할까?", choices:[
+      { t:"마지막으로 한 번만 물에 든다", d:[3,0,0], j:["숨비소리","물에서 올라와 내쉬는 해녀의 숨소리"] },
+      { t:"딸과 손녀에게 테왁을 물려준다", d:[0,0,3], j:["테왁","물질에 쓰는 부표. 해녀의 분신 같은 도구"] },
+      { t:"바닷가에 앉아 요왕님께 인사한다", d:[0,2,1], j:["요왕","바다를 다스리는 용왕의 제주어"] } ] }
+  ],
+  shaman: [
+    { age:40, title:"마흔 살, 굿판의 한가운데", text:"큰굿이 사흘째 이어진다. 북소리 사이로 신들의 말이 들린다.", choices:[
+      { t:"소미를 이끌며 본풀이를 더 깊이 익힌다", d:[0,2,1], j:["본풀이","신들의 내력을 풀어 부르는 노래"] },
+      { t:"아픈 이를 위해 치성을 드려 낫게 한다", d:[0,1,2], j:["치성","정성을 다해 신께 비는 일"] },
+      { t:"영등굿을 준비하며 해녀·어부와 어울린다", d:[1,1,1], j:["영등할망","바람의 여신. 2월에 제주를 찾아온다고 믿음"] } ] },
+    { age:55, title:"쉰다섯 살, 관아의 눈", text:"관아에서는 무속을 달가워하지 않는다. 그래도 마을은 당을 찾는다.", choices:[
+      { t:"눈을 피해 새벽에 몰래 굿을 올린다", d:[0,3,0], j:["당","마을의 신을 모신 곳"] },
+      { t:"마을 사람들과 힘을 모아 당을 지킨다", d:[0,1,2], j:["당맨","당을 맡아 돌보는 사람"] },
+      { t:"약초와 말로 조용히 병을 고쳐 준다", d:[1,1,1], j:["약초","아픈 이를 돌볼 때 쓰던 풀"] } ] },
+    { age:70, title:"일흔 살, 신이 되는 문턱", text:"사람들은 그를 '할망'이라 부르며 소원을 들고 찾아온다.", choices:[
+      { t:"본풀이를 마을 아이들에게 가르쳐 전한다", d:[0,1,2], j:["본풀이","신들의 내력을 풀어 부르는 노래"] },
+      { t:"신당 앞에서 마지막 굿을 올린다", d:[0,3,0], j:["굿","신께 올리는 의례"] },
+      { t:"마을 사람들의 소원을 하나씩 들어 준다", d:[0,1,2], j:["괸당","혈연과 이웃을 아우르는 제주식 어울림"] } ] }
+  ],
+  village: [
+    { age:40, title:"마흔 살, 마을의 일꾼", text:"밭과 바다와 집안일 사이, 마을의 모든 일이 손을 거친다.", choices:[
+      { t:"산파가 되어 마을의 아기들을 받는다", d:[0,1,2], j:["삼승할망","아기를 점지하고 지키는 산신"] },
+      { t:"밭을 일구고 조냥으로 살림을 불린다", d:[1,0,2], j:["조냥","아껴 쓰고 모으는 제주의 생활 태도"] },
+      { t:"수눌음 모임을 도맡아 이끈다", d:[0,0,3], j:["수눌음","서로 일손을 돌려 돕는 품앗이"] } ] },
+    { age:55, title:"쉰다섯 살, 마을의 어른", text:"사람들이 크고 작은 일을 의논하러 찾아온다.", choices:[
+      { t:"흉년을 대비해 곡식을 모아 둔다", d:[1,0,2], j:["조냥","아껴 쓰고 모으는 제주의 생활 태도"] },
+      { t:"이웃 분쟁을 중재해 마을을 화목하게", d:[0,1,2], j:["괸당","혈연과 이웃을 아우르는 제주식 어울림"] },
+      { t:"젊은 해녀와 농부들에게 지혜를 가르친다", d:[1,0,2], j:["수눌음","서로 일손을 돌려 돕는 품앗이"] } ] },
+    { age:70, title:"일흔 살, 마당의 저녁", text:"돌담 너머로 노을이 진다. 마당에는 손주들 소리가 가득하다.", choices:[
+      { t:"손주들과 둘러앉아 정을 나눈다", d:[0,0,3], j:["괸당","혈연과 이웃을 아우르는 제주식 어울림"] },
+      { t:"설문대할망 이야기를 들려준다", d:[0,2,1], j:["설문대할망","한라산을 만들었다는 제주의 창조 여신"] },
+      { t:"혼자 조용히 바다를 바라본다", d:[1,1,1], j:["바당","바다의 제주어"] } ] }
+  ]
+};
+
+/* ---------- 랜덤 인카운터 ---------- */
+const DIE = {
+  typhoon:{ death:"typhoon", text:"하늘이 무너지듯 파도가 솟았고, 그는 끝내 올라오지 못했다." },
+  plague: { death:"plague",  text:"괴질은 가리지 않았다. 열병이 깊어지더니 끝내 일어나지 못했다." },
+  famine: { death:"famine",  text:"흉년의 겨울은 길었다. 기운이 다해 눈을 감았다." }
+};
+const roll = (p, ok, die) => rnd(Math.min(.95, Math.max(.05, p))) ? ok : die;
+
+const ENCOUNTERS = [
+  { id:"yonggung", min:12, max:60, w:2, cond:()=>st.b>=2, title:"물속의 둥근 빛",
+    text:"물속 깊이 들던 중, 바닥에 둥근 빛의 문이 열렸다. 요왕국(용궁)으로 가는 길 같다.",
+    choices:[
+      { t:"문 안으로 들어간다", j:["요왕국","바다 속에 있다고 믿던 용왕의 나라"], run:()=>
+        rnd(st.s>=4?.1:.2)
+          ? { death:"yonggung", text:"산호 궁전에서 잔치를 받았다. 눈을 떴을 때 그는 돌아갈 길을 잊어버린 뒤였다." }
+          : { d:[1,3,0], ageAdd:3, flag:"yonggung", text:"요왕할망이 진주 한 알을 쥐어 보냈다. 돌아와 보니 마을에선 삼 년이 흘러 있었다." } },
+      { t:"소원만 빌고 돌아선다", j:["요왕","바다를 다스리는 용왕의 제주어"], run:()=>
+        ({ d:[1,1,0], text:"빛은 천천히 사라졌다. 올라와 보니 망시리에는 큰 전복이 가득했다." }) }
+    ] },
+  { id:"typhoon", min:10, max:70, w:3, cond:()=>true, title:"몰려오는 폭풍",
+    text:"하늘이 갑자기 검어지고, 집채만 한 파도가 해안으로 몰려온다.",
+    choices:[
+      { t:"물때를 믿고 서둘러 뭍으로 오른다", j:["물때","바닷물이 들고 나는 때. 물질의 기준"], run:()=>
+        roll(.9, { d:[0,0,1], text:"파도가 덮치기 전, 가까스로 불턱 돌담 위로 올라섰다." }, DIE.typhoon) },
+      { t:"동료 잠녀들을 불러 모아 함께 빠져나온다", j:["수눌음","서로 도와 일하는 제주의 품앗이"], run:()=>
+        roll(.78+st.g*.02, { d:[0,0,2], text:"서로의 손목을 붙잡고 파도를 넘어 모두 살아 돌아왔다." }, DIE.typhoon) },
+      { t:"전복 망태를 놓지 못하고 한 번 더 들어간다", j:["물숨","숨 한계를 넘기는 위험한 숨"], run:()=>
+        roll(.4+st.b*.05, { d:[3,0,0], text:"숨을 한계까지 끌어올려 큰 전복을 쥐고 올라왔다. 물숨은 먹지 않았다." }, DIE.typhoon) }
+    ] },
+  { id:"plague", min:8, max:70, w:2, cond:()=>true, title:"마을에 돈 괴질",
+    text:"어느 날부터 마을 사람들이 열이 나고 쓰러졌다. 사람들은 이를 '괴질'이라 불렀다.",
+    choices:[
+      { t:"집에 머물며 문을 닫아건다", j:["문 닫아 삼가기","병이 돌 때 사람 만남을 피하던 지혜"], run:()=>
+        roll(.8, { d:[0,0,0], text:"며칠을 숨죽여 보냈다. 병은 문턱을 넘지 못했다." }, DIE.plague) },
+      { t:"아픈 이웃을 곁에서 돌본다", j:["괸당","이웃과 친척이 서로 챙기는 제주식 어울림"], run:()=>
+        roll(.62+st.g*.025, { d:[0,0,3], text:"밤새 물수건을 갈아 주던 정이 마을 사람들 마음에 남았다." }, DIE.plague) },
+      { t:"당에 가서 치성을 드린다", j:["치성","정성을 다해 신께 비는 일"], run:()=>
+        roll(.68+st.s*.025, { d:[0,3,0], text:"기도 끝에 신열이 가라앉았다. 신이 허락한 것이라 믿었다." }, DIE.plague) }
+    ] },
+  { id:"famine", min:6, max:70, w:2, cond:()=>true, title:"몇 해째 이어진 흉년",
+    text:"바람이 거세 농사가 안 되고 곡식 독이 바닥을 드러냈다.",
+    choices:[
+      { t:"바다에서 더 오래 일해 먹을거리를 구한다", j:["보말","고둥. 바닷가 사람들의 식량"], run:()=>
+        roll(.72+st.b*.025, { d:[2,0,0], text:"물에 더 오래 머물며 미역과 소라로 겨울을 났다." }, DIE.famine) },
+      { t:"이웃과 곡식을 조냥해 나눠 먹는다", j:["조냥","아껴 쓰고 나누는 제주의 생활 태도"], run:()=>
+        roll(.72+st.g*.025, { d:[0,0,2], text:"한 줌씩 나눈 곡식이 모두를 겨울 너머로 데려갔다." }, DIE.famine) },
+      { t:"영등할망께 풍어를 빈다", j:["영등할망","바람의 여신. 2월에 제주를 찾아온다고 믿음"], run:()=>
+        roll(.68+st.s*.025, { d:[0,2,1], text:"봄바람과 함께 바다에 소라와 미역이 가득 들었다." }, DIE.famine) }
+    ] },
+  { id:"leave", min:15, max:55, w:3, cond:()=>st.b>=2 && !flags.away, title:"바다 건너온 제안",
+    text:"뭍의 포구에서 온 상인이 물질 일꾼을 구한다. 돈벌이는 크지만 오래 고향을 떠나야 한다.",
+    choices:[
+      { t:"육지(뭍)로 출가물질을 떠난다", j:["출가물질","고향을 떠나 다른 지역 바다로 물질하러 가는 일"], run:()=>
+        ({ d:[2,0,0], ageAdd:3, flag:"mainland", pending:"comeback", text:"배를 타고 뭍의 낯선 바다에 닿았다. 말씨도 물빛도 달랐다." }) },
+      { t:"일본(왜)으로 가는 배에 오른다", j:["출가물질","고향을 떠나 먼 바다로 물질하러 가는 일"], run:()=>
+        ({ d:[3,0,0], ageAdd:4, flag:"japan", pending:"comeback", text:"더 먼 바다를 건넜다. 바다는 거칠었지만 물속 전복은 크고 많았다." }) },
+      { t:"고향 제주에 남는다", j:["괸당","이웃과 친척이 서로 챙기는 제주식 어울림"], run:()=>
+        ({ d:[0,0,2], text:"익숙한 바다, 익숙한 얼굴들. 남기로 한 마음이 편안했다." }) }
+    ] },
+  { id:"comeback", hidden:true, title:"돌아갈 것인가, 머물 것인가",
+    text:()=>`몇 해가 지났다. ${flags.away==="japan"?"일본":"육지"}의 바다에도 정이 들었다. 그러나 고향의 돌담과 불턱이 눈에 밟힌다.`,
+    choices:[
+      { t:"고향 제주로 돌아간다", j:["혼저 옵서예","어서 오세요 — 돌아온 이를 맞는 인사"], run:()=>
+        ({ d:[1,0,2], text:"포구에 내리자 이웃들이 달려 나왔다. '혼저 옵서예!' 집이 곧 바다였다.", home:true }) },
+      { t:"이곳에 뿌리내린다", j:["이녁 땅","내가 자리 잡은 곳 — 정이 든 땅"], run:()=>
+        ({ settle:true, text:"그곳에서 가정을 꾸리고 이웃을 만들었다. 제주의 말씨는 늙어서도 입에 남았다." }) }
+    ] },
+  { id:"tribute", min:18, max:65, w:2, cond:()=>st.b>=3, title:"관아의 진상 독촉",
+    text:"관아에서 전복을 진상하라는 독촉이 내려왔다. 이번 몫은 해마다 늘어난다.",
+    choices:[
+      { t:"말없이 정해진 몫을 바친다", j:["진상","나라에 지방 특산물을 바치는 일. 전복 진상은 해녀에게 큰 부담"], run:()=>
+        ({ d:[1,0,1], text:"전복을 바치고 나니 손이 비었다. 그래도 마을은 조용했다." }) },
+      { t:"일부를 몰래 이웃 몫으로 빼 둔다", j:["조냥","아껴서 나눠 쓰는 지혜"], run:()=>
+        ({ d:[0,0,2], text:"들키지 않았다. 빼 둔 전복이 굶던 집의 겨울을 살렸다." }) },
+      { t:"잠녀들과 함께 몫을 줄여 달라 호소한다", j:["수눌음","서로 도와 어려움을 넘기는 마음"], run:()=>
+        ({ d:[0,1,3], text:"한목소리가 관아를 흔들었다. 몫은 조금 줄었다." }) }
+    ] },
+  { id:"match", min:16, max:30, w:2, cond:()=>!flags.married, title:"문턱을 넘은 중매쟁이",
+    text:"이웃 마을 중매쟁이가 청혼 이야기를 들고 문턱을 넘어왔다.",
+    choices:[
+      { t:"혼인을 받아들인다", j:["혼저 옵서예","어서 오세요 — 새 식구를 맞는 인사"], run:()=>
+        ({ d:[0,0,2], flag:"married", text:"두 집안이 한 상에 모였다. 새 식구와 정이 깊어 갔다." }) },
+      { t:"물질과 굿일이 우선이라 거절한다", j:["혼자 고르다","제 길을 제 힘으로 정하는 마음"], run:()=>
+        ({ d:[1,1,0], text:"한동안 소문이 돌았지만, 마음은 더 단단해졌다." }) }
+    ] },
+  { id:"drift", min:20, max:65, w:1, cond:()=>true, title:"해안에 닿은 낯선 배",
+    text:"파도에 떠밀려 온 이양선 한 척이 해안에 닿았다. 낯선 옷차림의 사람들이 모여 있다.",
+    choices:[
+      { t:"물과 먹을 것을 건넨다", j:["이양선","낯선 모양의 서양식 배"], run:()=>
+        ({ d:[0,0,2], text:"말은 통하지 않았지만, 그릇을 마주 든 손은 알아들었다." }) },
+      { t:"관아에 알리고 지켜본다", j:["관아","고을 일을 보던 관청"], run:()=>
+        ({ d:[0,1,1], text:"관아 사람들이 달려왔고, 배는 며칠 뒤 다시 바다로 나갔다." }) },
+      { t:"멀찍이서 구경만 한다", j:["구경","낯선 일을 멀리서 보는 일"], run:()=>
+        ({ d:[1,0,0], text:"처음 보는 돛과 쇠붙이를 오래 기억했다." }) }
+    ] }
+];
+
+/* ---------- 결말 ---------- */
+const E = {
+  typhoon:  { name:"바다가 데려간 삶", text:"거센 바다는 늘 두려움이자 삶이었다. 그의 이름은 마을 사람들이 불턱에서 오래 불렀다." },
+  plague:   { name:"괴질에 스러진 삶", text:"마을을 덮친 병 앞에서 끝까지 곁을 지켰다. 이웃들은 그를 오래 기억했다." },
+  famine:   { name:"흉년을 넘지 못한 삶", text:"굶주림의 해에 삶이 멈췄지만, 마을은 그의 몫까지 나누며 겨울을 났다." },
+  yonggung: { name:"용궁에 머문 삶", text:"요왕국에서 돌아오지 않은 해녀. 마을에서는 지금도 바닷속 빛을 보면 그의 이름을 부른다고 한다." },
+  settledMainland:{ name:"뭍에 뿌리내린 삶", text:"제주의 말씨를 간직한 채 뭍에서 가정과 일터를 일궜다. 그의 후손은 지금도 바다를 사랑한다." },
+  settledJapan:{ name:"바다 건너 뿌리내린 삶", text:"일본의 어느 포구에서 여든을 맞았다. 제주의 노래를 손주에게 들려주며." },
+  sea1:  { name:"요왕이 아낀 해녀", text:"용궁에서 돌아온 이는 바다를 더 깊이 알았다. 사람들은 요왕이 아낀 사람이라 불렀다." },
+  sea2:  { name:"대상군 해녀", text:"가장 깊은 물을 가장 오래 견딘 해녀. 후배들은 그의 숨비소리를 따라 물에 들었다." },
+  sea3:  { name:"물때를 아는 해녀", text:"욕심 없이 물때를 읽으며 바다와 평생을 나란히 걸었다." },
+  sh1:   { name:"당신(堂神)이 된 삶", text:"사람들이 그의 이야기를 본풀이로 노래했다. 이제 마을 당에서 신으로 모셔진다." },
+  sh2:   { name:"대심방", text:"신과 사람 사이의 가장 큰 목소리가 되어, 제주 곳곳의 굿판에 불려 다녔다." },
+  sh3:   { name:"굿판을 지킨 소미", text:"큰 이름 대신 굿판의 뒷자리를 지켜 마을의 신앙을 이었다." },
+  vi1:   { name:"마을의 큰 어른", text:"괸당이 늘 문 앞에 모여 있던 사람. 정이 곧 그의 재산이었다." },
+  vi2:   { name:"삼승할망 같은 산파", text:"마을 아기 대부분이 그의 손을 거쳐 태어났다. 사람들은 그를 삼승할망이라 불렀다." },
+  vi3:   { name:"조냥으로 살아낸 할망", text:"크게 이름나지 않았지만 아끼고 나누며 단단한 삶을 살았다." }
+};
+const ORDER = Object.keys(E);
+
+function endingKey(){
+  if (flags.settled) return flags.settled==="japan" ? "settledJapan" : "settledMainland";
+  const { b, s, g } = st;
+  if (path==="sea")    return (flags.yonggung && s>=4) ? "sea1" : b>=8 ? "sea2" : "sea3";
+  if (path==="shaman") return (s>=7&&g>=6) ? "sh1" : s>=7 ? "sh2" : "sh3";
+  return g>=8 ? "vi1" : (s>=3&&g>=6) ? "vi2" : "vi3";
+}
+
+/* ---------- 상태 ---------- */
+let st, path, flags, log, seq, idx, curAge, encCount, used, pending, village, home, birthYear;
+let auto = false, autoT = null, curArm = null, ageAnim = null, dispAge = 0;
+
+function dexLoad(){ try { return JSON.parse(localStorage.getItem("jeju_dex2")||"[]"); } catch(e){ return []; } }
+function dexAdd(k){ const d = dexLoad(); if (!d.includes(k)) { d.push(k); try { localStorage.setItem("jeju_dex2", JSON.stringify(d)); } catch(e){} } return d.includes(k)&&dexLoad().length ? dexLoad() : [...new Set([...d])]; }
+
+function arm(fn, ms){ curArm = fn ? { fn, ms } : null; clearTimeout(autoT); if (auto && fn) autoT = setTimeout(fn, ms); }
+
+$("autoBtn").onclick = () => {
+  auto = !auto;
+  $("autoBtn").textContent = "🤖 자동 진행 " + (auto ? "ON" : "OFF");
+  $("autoBtn").classList.toggle("on", auto);
+  clearTimeout(autoT);
+  if (auto && curArm) autoT = setTimeout(curArm.fn, curArm.ms);
+};
+
+function setCard(html, enc){
+  const c = $("card"); c.innerHTML = html; c.classList.toggle("enc", !!enc);
+  c.classList.remove("pop"); void c.offsetWidth; c.classList.add("pop");
+}
+
+function drawPerson(age){
+  const sc = 0.45 + Math.min(age,25)/25*0.55;
+  $("person").style.transform = `translateX(-50%) scale(${sc})`;
+  const hair = age>=60 ? "#e8e8ec" : "#2b2020";
+  const robe = st.s>=st.b && st.s>=3 ? "#ffffff" : "#3d4a55";
+  const band = st.s>=3 ? `<rect x="22" y="44" width="26" height="5" fill="#c8453b"/>` : "";
+  const tewak = st.b>=3 ? `<circle cx="58" cy="82" r="10" fill="#f28c28" stroke="#b5651d" stroke-width="2"/>` : "";
+  const halo = (path==="shaman" && st.s>=7 && st.g>=6) ? `<ellipse cx="35" cy="10" rx="18" ry="5" fill="none" stroke="#f2b84b" stroke-width="3"/>` : "";
+  $("person").innerHTML = `${halo}<circle cx="35" cy="22" r="14" fill="#f3d2b3"/><path d="M20 22 Q35 -2 50 22 Q50 12 35 8 Q20 12 20 22z" fill="${hair}"/>
+    <path d="M22 38 H48 L52 88 H18 Z" fill="${robe}" stroke="#0003"/>${band}${tewak}`;
+}
+
+function refresh(){
+  for (const k of ["b","s","g"]) { $("v"+k).textContent = st[k]; $("b"+k).style.width = Math.min(100, st[k]/MAX*100)+"%"; }
+  drawPerson(dispAge);
+}
+
+function setAge(to, ms=800){
+  clearInterval(ageAnim);
+  const from = dispAge, t0 = Date.now();
+  if (from === to) { refresh(); return; }
+  ageAnim = setInterval(()=>{
+    const p = Math.min(1, (Date.now()-t0)/ms);
+    dispAge = from + (to-from)*p;
+    $("age").textContent = Math.floor(dispAge);
+    $("lifebar").style.width = Math.min(100, dispAge/80*100)+"%";
+    drawPerson(dispAge);
+    if (p>=1) clearInterval(ageAnim);
+  }, 40);
+  refresh();
+}
+
+function setPlace(name, away){ $("place").textContent = name; $("scene").classList.toggle("away", !!away); }
+
+function applyD(d){ if (!d) return; st.b=Math.max(0,Math.min(MAX,st.b+d[0])); st.s=Math.max(0,Math.min(MAX,st.s+d[1])); st.g=Math.max(0,Math.min(MAX,st.g+d[2])); refresh(); }
+
+/* ---------- 화면 틀 ---------- */
+function showChoice({ tag, title, text, choices, enc, onPick }){
+  setCard(`${tag?`<span class="tag ${enc?"":"path"}">${tag}</span>`:""}<h2>${title}</h2><p>${text}</p>
+    <div class="choices">${choices.map((c,i)=>`<button class="choice" data-i="${i}">${c.t}</button>`).join("")}</div>`, enc);
+  const btns = [...document.querySelectorAll(".choice")];
+  btns.forEach(b => b.onclick = () => { arm(null); onPick(+b.dataset.i); });
+  arm(() => pickOne(btns).click(), 1800);
+}
+function showResult(html, onNext, enc){
+  setCard(`${html}<div class="choices"><button class="next" id="nx">계속 ›</button></div>`, enc);
+  $("nx").onclick = () => { arm(null); onNext(); };
+  arm(onNext, 2600);
+}
+
+/* ---------- 진행 ---------- */
+function start(){
+  village = pickOne(VILLAGES);
+  const homes = [
+    { n:"해녀 집안", d:[2,0,1] }, { n:"심방 집안", d:[0,2,1] }, { n:"농사짓는 집안", d:[0,0,3] }
+  ];
+  home = pickOne(homes);
+  birthYear = 1830 + Math.floor(Math.random()*45);
+  const king = birthYear<1834?"순조":birthYear<1849?"헌종":birthYear<1863?"철종":"고종";
+  st = { b:home.d[0], s:home.d[1], g:home.d[2] };
+  path = null; flags = {}; log = [`${village}마을 ${home.n}에서 태어남`];
+  seq = COMMON.slice(); idx = -1; curAge = 0; dispAge = 0; encCount = 0; used = new Set(); pending = null;
+  $("era").textContent = `조선 후기 · ${king} 연간 (${birthYear}년)`;
+  setPlace(village, false); setAge(0); $("age").textContent = 0; $("lifebar").style.width = "0";
+  setCard(`<h2>삼승할망이 점지한 아이</h2>
+    <p>조선 ${king} 연간, 제주 ${village}마을 <b>${home.n}</b>의 딸로 태어났다.</p>
+    <div class="jeju"><b>삼승할망</b> — 아기를 점지하고 지키는 산신</div>
+    <p style="opacity:.7;font-size:.85rem">시간 제한은 없어요. 선택해야 시간이 흐릅니다. 삶 속에서 뜻밖의 일을 만날 수도 있어요.</p>
+    <div class="choices"><button class="next" id="nx">삶 시작 ›</button></div>`);
+  $("nx").onclick = () => { arm(null); nextStage(); };
+  arm(() => nextStage(), 1500);
+}
+
+function nextStage(){
+  idx++;
+  if (idx >= seq.length) return finish(endingKey(), 80);
+  const S = seq[idx];
+  const age = Math.max(S.age, curAge);
+  curAge = age; setAge(age);
+  const avail = S.choices.filter(c => !c.need || st[c.need[0]] >= c.need[1]);
+  const tag = path ? ({sea:"🌊 바다의 길", shaman:"🔮 신의 길", village:"🏘 마을의 길"})[path] : null;
+  showChoice({ tag, title:S.title, text:S.text, choices:avail, onPick:i => {
+    const c = avail[i];
+    applyD(c.d);
+    log.push(`${age}세 — ${c.t}`);
+    let extra = "";
+    if (c.path) {
+      path = c.path;
+      seq = COMMON.concat(PATH_STAGES[path]);
+      extra = `<span class="tag path">${({sea:"🌊 바다의 길로",shaman:"🔮 신의 길로",village:"🏘 마을의 길로"})[path]} 접어들었다</span>`;
+      refresh();
+    }
+    showResult(`${extra}<h2>${age}세</h2><p>${c.t}</p><div class="jeju"><b>${c.j[0]}</b> — ${c.j[1]}</div>`, afterStage);
+  }});
+}
+
+function afterStage(){
+  const cur = seq[idx], nxt = seq[idx+1];
+  const nextAge = nxt ? nxt.age : 80;
+  const age = Math.max(curAge, Math.floor((cur.age+nextAge)/2));
+  if (pending) { const id = pending; pending = null; return runEncounter(ENCOUNTERS.find(e=>e.id===id), age); }
+  if (nxt && encCount<3 && rnd(.45)) {
+    const pool = ENCOUNTERS.filter(e => !e.hidden && !used.has(e.id) && age>=e.min && age<=e.max && e.cond());
+    if (pool.length) {
+      const total = pool.reduce((a,e)=>a+e.w,0); let r = Math.random()*total, e = pool[0];
+      for (const x of pool) { r -= x.w; if (r<=0) { e = x; break; } }
+      encCount++; used.add(e.id);
+      return runEncounter(e, age);
+    }
+  }
+  nextStage();
+}
+
+function runEncounter(e, age){
+  curAge = Math.max(curAge, age); setAge(curAge);
+  const text = typeof e.text === "function" ? e.text() : e.text;
+  showChoice({ tag:"⚡ 뜻밖의 일", title:e.title, text, choices:e.choices, enc:true, onPick:i => {
+    const c = e.choices[i], o = c.run();
+    applyD(o.d);
+    if (o.ageAdd) { curAge += o.ageAdd; }
+    if (o.flag) { if (o.flag==="mainland"||o.flag==="japan") { flags.away = o.flag; setPlace(o.flag==="japan"?"일본":"육지",true); } else flags[o.flag] = true; }
+    if (o.home) { flags.away = null; setPlace(village, false); }
+    if (o.pending) pending = o.pending;
+    log.push(`${curAge}세 — [${e.title}] ${c.t}`);
+    const html = `<span class="tag">⚡ 뜻밖의 일</span><h2>${e.title}</h2><p>${c.t}</p><p>${o.text}</p><div class="jeju"><b>${c.j[0]}</b> — ${c.j[1]}</div>`;
+    if (o.death) { setAge(curAge); return showResult(html, () => finish(o.death, curAge), true); }
+    if (o.settle) { flags.settled = flags.away; return showResult(html, () => finish(endingKey(), 80), true); }
+    setAge(curAge);
+    // 인카운터 뒤: 대기 중인 인카운터가 있으면 이어서, 아니면 다음 시기로
+    showResult(html, () => pending ? afterEncounterPending() : nextStage(), true);
+  }});
+}
+function afterEncounterPending(){ const id = pending; pending = null; runEncounter(ENCOUNTERS.find(e=>e.id===id), curAge+1); }
+
+function finish(key, age){
+  const e = E[key];
+  const dex = dexAdd(key);
+  setAge(age, 1000);
+  arm(null);
+  setCard(`<h2>🌅 ${age}세 — ${e.name}</h2>
+    <p style="font-size:.78rem;opacity:.6">${birthYear}년 – ${birthYear+age}년 · ${flags.away?(flags.away==="japan"?"일본":"육지"):village}</p>
+    <p>${e.text}</p>
+    <ol class="log">${log.map(l=>`<li>${l}</li>`).join("")}</ol>
+    <div class="dex">${ORDER.map(o=>`<span class="${dex.includes(o)?"on":""}">${dex.includes(o)?E[o].name:"???"}</span>`).join("")}</div>
+    <p style="font-size:.8rem;opacity:.6">결말 도감 ${dex.length}/${ORDER.length}</p>
+    <div class="choices"><button class="big" id="again">다시 태어나기</button></div>`);
+  $("again").onclick = start;
+}
+
+st = {b:0,s:0,g:0}; path = null; flags = {};
+refresh();
+setCard(`<h2>제주 여인의 일생</h2>
+  <p>조선 후기 제주의 한 여자아이로 태어나, 해녀가 될지 · 심방이 될지 · 마을의 어른이 될지 — 선택으로 길러 갑니다. 뜻밖의 일도 일어나요.</p>
+  <div class="choices"><button class="big" id="go">태어나기</button></div>`);
+$("go").onclick = start;
+</script>
+</body>
+</html>
